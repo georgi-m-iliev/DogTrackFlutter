@@ -1,6 +1,7 @@
+import 'dart:ui' as ui;
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
@@ -17,7 +18,20 @@ class HomePage extends StatefulWidget {
 
 class HomePageState extends State<HomePage> {
   final Completer<GoogleMapController> _controller = Completer();
-// on below line we have specified camera position
+  final CameraPosition initPosition = const CameraPosition(
+    target: LatLng(42.5633914, 25.6155994),
+    zoom: 16,
+  );
+
+  Set<Marker> markers = {};
+  late BitmapDescriptor customIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
+
+  BluetoothConnection? connection;
+  bool isConnecting = true;
+  bool get isConnected => (connection?.isConnected ?? false);
+  bool isDisconnecting = false;
+  
+  List<int> dataBuffer = List<int>.empty(growable: true);
 
   Future<Position> getUserCurrentLocation() async {
     await Geolocator.requestPermission()
@@ -29,29 +43,27 @@ class HomePageState extends State<HomePage> {
     return await Geolocator.getCurrentPosition();
   }
 
-  static CameraPosition _kGoogle = const CameraPosition(
-    target: LatLng(42.5633914, 25.6155994),
-    zoom: 16,
-  );
-
-  BluetoothConnection? connection;
-  bool isConnecting = true;
-  bool get isConnected => (connection?.isConnected ?? false);
-  bool isDisconnecting = false;
+  // Function to convert asset to bytes for usage by BitmapDescriptor
+  Future<Uint8List> getImages(String path, int width) async{
+    ByteData data = await rootBundle.load(path);
+    ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List(), targetHeight: width);
+    ui.FrameInfo fi = await codec.getNextFrame();
+    return(await fi.image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List();
+  }
 
   void connectDevice() {
-    BluetoothConnection.toAddress(widget.server.address).then((_connection) {
+    BluetoothConnection.toAddress(widget.server.address).then((result) {
       print('Connected to the device');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Connection successfully established!"))
       );
-      connection = _connection;
+      connection = result;
       setState(() {
         isConnecting = false;
         isDisconnecting = false;
       });
 
-      connection!.input!.listen(_onDataReceived).onDone(() {
+      connection!.input!.listen(onDataReceived).onDone(() {
         // Example: Detect which side closed the connection
         // There should be `isDisconnecting` flag to show are we are (locally)
         // in middle of disconnecting process, should be set before calling
@@ -67,7 +79,7 @@ class HomePageState extends State<HomePage> {
             const SnackBar(content: Text("Device disconnected willfully!"))
           );
         }
-        if (this.mounted) {
+        if (mounted) {
           setState(() {});
         }
       });
@@ -85,13 +97,48 @@ class HomePageState extends State<HomePage> {
     connection?.finish();
   }
 
+  void addMarker(final LatLng loc) {
+    // print(loc);
+    setState(() {
+      markers.clear();
+      markers.add(
+        Marker(
+          markerId: const MarkerId("1"),
+          position: loc,
+          icon: customIcon,
+        )
+      );
+      _controller.future.then((controller) {
+        controller.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(target: loc, zoom: 16,)
+          )
+        );
+      });
+    });
+  }
+
+  LatLng parseData(String data, int endIndex, int sepIndex) {
+    return LatLng(double.parse(data.substring(0, sepIndex)), double.parse(data.substring(sepIndex + 1, endIndex)));
+  }
+
+  void onDataReceived(Uint8List data) {
+    dataBuffer += data;
+
+    int endIndex = dataBuffer.indexOf('\n'.codeUnitAt(0));
+    int sepIndex = dataBuffer.indexOf(' '.codeUnitAt(0));
+    if (endIndex >= 0 && endIndex <= dataBuffer.length - 1) {
+      String result = String.fromCharCodes(dataBuffer);
+      // print(result);
+      addMarker(parseData(result, endIndex, sepIndex));
+      dataBuffer.clear();
+    }
+  }
+
   @override
   void initState() {
-    getUserCurrentLocation().then((value) {
-      _kGoogle = CameraPosition(
-        target: LatLng(value.latitude, value.longitude),
-        zoom: 14.4746,
-      );
+    getImages("assets/images/dog-paw.png", 150).then((value) {
+      customIcon = BitmapDescriptor.fromBytes(value);
     });
 
     super.initState();
@@ -103,8 +150,15 @@ class HomePageState extends State<HomePage> {
     });
   }
 
-  void _onDataReceived(Uint8List data) {
-    print(data);
+  @override
+  void dispose() {
+    // Avoid memory leak (`setState` after dispose) and disconnect
+    if (isConnected) {
+      isDisconnecting = true;
+      connection?.dispose();
+      connection = null;
+    }
+    super.dispose();
   }
 
   @override
@@ -112,22 +166,16 @@ class HomePageState extends State<HomePage> {
     return Scaffold(
       body: SafeArea(
         child: GoogleMap(
-            initialCameraPosition: _kGoogle,
-            mapType: MapType.normal,
+            initialCameraPosition: initPosition,
+            mapType: MapType.satellite,
             myLocationEnabled: true,
             compassEnabled: true,
             zoomControlsEnabled: false,
             onMapCreated: (GoogleMapController controller) {
               _controller.complete(controller);
             },
-            markers: {
-              const Marker(
-                  markerId: MarkerId('1'),
-                  position: LatLng(20.42796133580664, 75.885749655962),
-                  infoWindow: InfoWindow(
-                    title: 'My Position',
-                  ))
-            }),
+            markers: markers,
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
