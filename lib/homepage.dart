@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class HomePage extends StatefulWidget {
   final BluetoothDevice server = const BluetoothDevice(
@@ -142,12 +141,6 @@ class HomePageState extends State<HomePage> {
     });
 
     super.initState();
-
-    Permission.bluetoothScan.status.then((status) {
-      if (status.isGranted) {
-        // We didn't ask for permission yet or the permission has been denied before but not permanently.
-      }
-    });
   }
 
   @override
