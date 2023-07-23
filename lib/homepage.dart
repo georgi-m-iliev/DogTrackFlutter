@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 import 'dart:async';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -37,7 +38,7 @@ class HomePageState extends State<HomePage> {
         .then((value) {})
         .onError((error, stackTrace) async {
       await Geolocator.requestPermission();
-      print("ERROR$error");
+      log("ERROR$error");
     });
     return await Geolocator.getCurrentPosition();
   }
@@ -52,7 +53,7 @@ class HomePageState extends State<HomePage> {
 
   void connectDevice() {
     BluetoothConnection.toAddress(widget.server.address).then((result) {
-      print('Connected to the device');
+      log('Connected to the device');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Connection successfully established!"))
       );
@@ -83,8 +84,8 @@ class HomePageState extends State<HomePage> {
         }
       });
     }).catchError((error) {
-      print('Cannot connect, exception occured');
-      print(error);
+      log('Cannot connect, exception occured');
+      log(error);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Connection attempt failed!"))
       );
@@ -97,7 +98,7 @@ class HomePageState extends State<HomePage> {
   }
 
   void addMarker(final LatLng loc) {
-    // print(loc);
+    // log(loc);
     setState(() {
       markers.clear();
       markers.add(
@@ -128,7 +129,7 @@ class HomePageState extends State<HomePage> {
     int sepIndex = dataBuffer.indexOf(' '.codeUnitAt(0));
     if (endIndex >= 0 && endIndex <= dataBuffer.length - 1) {
       String result = String.fromCharCodes(dataBuffer);
-      // print(result);
+      // log(result);
       addMarker(parseData(result, endIndex, sepIndex));
       dataBuffer.clear();
     }
