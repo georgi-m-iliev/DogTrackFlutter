@@ -52,10 +52,20 @@ class HomePageState extends State<HomePage> {
   }
 
   void connectDevice() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Initiating connection to device!"),
+        duration: Duration(milliseconds: 1500)
+      )
+    );
+
     BluetoothConnection.toAddress(widget.server.address).then((result) {
       log('Connected to the device');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Connection successfully established!"))
+        const SnackBar(
+          content: Text("Connection successfully established!"),
+          duration: Duration(seconds: 2)
+        )
       );
       connection = result;
       setState(() {
@@ -78,6 +88,7 @@ class HomePageState extends State<HomePage> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Device disconnected willfully!"))
           );
+          markers.clear();
         }
         if (mounted) {
           setState(() {});

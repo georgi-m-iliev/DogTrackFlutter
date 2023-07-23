@@ -1,5 +1,4 @@
 import 'homepage.dart';
-import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -42,7 +41,6 @@ class MyApp extends StatelessWidget {
           fontSize: 16.0
         );
       }
-      // log(statuses[Permission.location])      
     });
   }
 
@@ -64,22 +62,17 @@ class MyApp extends StatelessWidget {
     });
   }
 
-// This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     requestPermissions();
     requestBluetooth(context);
 
     return MaterialApp(
-      // on below line we are specifying title of our app
       title: 'DogTrack',
-      // on below line we are hiding debug banner
       debugShowCheckedModeBanner: true,
       theme: ThemeData(
-        // on below line we are specifying theme
         primarySwatch: Colors.green,
       ),
-      // First screen of our app
       home: const Scaffold(
         body: HomePage()
       ),
