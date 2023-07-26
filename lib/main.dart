@@ -1,5 +1,6 @@
 import 'homepage.dart';
 import 'package:flutter/material.dart';
+import 'package:wakelock/wakelock.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
@@ -66,6 +67,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     requestPermissions();
     requestBluetooth(context);
+    Wakelock.enable();
 
     return MaterialApp(
       title: 'DogTrack',
