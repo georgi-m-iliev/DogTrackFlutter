@@ -9,8 +9,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 
-
-
 class HomePage extends StatefulWidget {
   final BluetoothDevice server = const BluetoothDevice(
       address: String.fromEnvironment('HC05_MAC_ADDRESS'));
@@ -27,14 +25,17 @@ class HomePageState extends State<HomePage> {
     zoom: 16,
   );
 
-  Set<Marker> markers = {};
+  final Set<Marker> markers = {};
+  final Set<Polyline> polylines = {};
+  LatLng previousLoc = const LatLng(200, 200);
+  
   late BitmapDescriptor customIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
 
   BluetoothConnection? connection;
   bool isConnecting = true;
   bool get isConnected => (connection?.isConnected ?? false);
   bool isDisconnecting = false;
-  
+
   List<int> dataBuffer = List<int>.empty(growable: true);
 
   Future<Position> getUserCurrentLocation() async {
@@ -53,6 +54,11 @@ class HomePageState extends State<HomePage> {
     ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List(), targetHeight: width);
     ui.FrameInfo fi = await codec.getNextFrame();
     return(await fi.image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List();
+  }
+
+  LatLng parseData(String data, int endIndex, int sepIndex) {
+    return LatLng(double.parse(data.substring(0, sepIndex)),
+        double.parse(data.substring(sepIndex + 1, endIndex)));
   }
 
   void requestPermissions() async {
@@ -124,6 +130,11 @@ class HomePageState extends State<HomePage> {
   }
 
   void connectDevice() {
+    // Clear recent data from map
+    markers.clear();
+    polylines.clear();
+    previousLoc = const LatLng(200, 200);
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(AppLocalizations.of(context)!.initConnection))
     );
@@ -165,8 +176,8 @@ class HomePageState extends State<HomePage> {
       debugPrint(error.toString());
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.connectAttemptFailed),
-          backgroundColor: Colors.red),
+            content: Text(AppLocalizations.of(context)!.connectAttemptFailed),
+            backgroundColor: Colors.red),
       );
     });
   }
@@ -174,31 +185,6 @@ class HomePageState extends State<HomePage> {
   void disconnectDevice() {
     isDisconnecting = true;
     connection?.finish();
-  }
-
-  void addMarker(final LatLng loc) {
-    // debugPrint(loc);
-    setState(() {
-      markers.clear();
-      markers.add(
-        Marker(
-          markerId: const MarkerId("1"),
-          position: loc,
-          icon: customIcon,
-        )
-      );
-      _controller.future.then((controller) {
-        controller.animateCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(target: loc, zoom: 16,)
-          )
-        );
-      });
-    });
-  }
-
-  LatLng parseData(String data, int endIndex, int sepIndex) {
-    return LatLng(double.parse(data.substring(0, sepIndex)), double.parse(data.substring(sepIndex + 1, endIndex)));
   }
 
   void onDataReceived(Uint8List data) {
@@ -209,9 +195,47 @@ class HomePageState extends State<HomePage> {
     if (endIndex >= 0 && endIndex <= dataBuffer.length - 1) {
       String result = String.fromCharCodes(dataBuffer);
       // debugPrint(result);
-      addMarker(parseData(result, endIndex, sepIndex));
+      updateLocation(parseData(result, endIndex, sepIndex));
       dataBuffer.clear();
     }
+  }
+
+  late LatLng lastLocation;
+  
+  void updateLocation(final LatLng loc) {
+    // debugPrint(loc);
+    setMarker(loc);
+    if(previousLoc.latitude != 200 && previousLoc.longitude != 200) {
+      addPolyline(loc);
+    }
+    previousLoc = loc;
+  }
+
+  void setMarker(final LatLng loc) {
+    setState(() {
+      markers.clear();
+      markers.add(Marker(
+        markerId: const MarkerId("1"),
+        position: loc,
+        icon: customIcon,
+      ));
+      _controller.future.then((controller) {
+        controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
+          target: loc,
+          zoom: 16,
+        )));
+      });
+    });
+  }
+
+  void addPolyline(LatLng loc) {
+    polylines.add(
+      Polyline(
+        polylineId: const PolylineId("1"),
+        points: [previousLoc, loc],
+        color: Colors.orange.shade900
+      )
+    );
   }
 
   @override
@@ -238,19 +262,19 @@ class HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       body: SafeArea(
         child: GoogleMap(
-            initialCameraPosition: initPosition,
-            mapType: MapType.satellite,
-            myLocationEnabled: true,
-            compassEnabled: true,
-            zoomControlsEnabled: false,
-            onMapCreated: (GoogleMapController controller) {
-              _controller.complete(controller);
-            },
-            markers: markers,
+          initialCameraPosition: initPosition,
+          mapType: MapType.satellite,
+          myLocationEnabled: true,
+          compassEnabled: true,
+          zoomControlsEnabled: false,
+          onMapCreated: (GoogleMapController controller) {
+            _controller.complete(controller);
+          },
+          markers: markers,
+          polylines: polylines,
         ),
       ),
       floatingActionButton: FloatingActionButton(
