@@ -1,0 +1,11 @@
+{
+    "initConnection": "Свързване с устройството...",
+    "connectSuccessful": "Връзката е успешно установена!",
+    "connectAttemptFailed": "Опитът за свързване е неуспешен!",
+    "localDisconnect": "Успешно прекъсване на връзката!",
+    "remoteDisconnect": "Устройството се отвърза своеволно!",
+    "locationPermissionError": "Проблем с достъп до местоположение! Грешка: {errorStatus}",
+    "bluetoothPermissionError": "Проблем с достъп до Bluetooth! Грешка: {errorStatus}",
+    "bluetoothRequestSuccess": "Bluetooth е включен!",
+    "bluetoothRequestDeclined": "Bluetooth не беше включен. Моля включете го!"
+}

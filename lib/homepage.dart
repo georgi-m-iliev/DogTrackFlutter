@@ -3,9 +3,14 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+
+
 
 class HomePage extends StatefulWidget {
   final BluetoothDevice server = const BluetoothDevice(
@@ -38,7 +43,7 @@ class HomePageState extends State<HomePage> {
         .then((value) {})
         .onError((error, stackTrace) async {
       await Geolocator.requestPermission();
-      log("ERROR$error");
+      debugPrint("Error with fetching location");
     });
     return await Geolocator.getCurrentPosition();
   }
@@ -51,21 +56,83 @@ class HomePageState extends State<HomePage> {
     return(await fi.image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List();
   }
 
+  void requestPermissions() async {
+    Map<Permission, PermissionStatus> statuses =
+    await [
+      Permission.location,
+      Permission.locationWhenInUse,
+      Permission.bluetooth,
+      Permission.bluetoothScan,
+      Permission.bluetoothConnect
+    ].request();
+    
+    if (!mounted) return; // if the widget is disposed, then do nothing
+
+    if (statuses[Permission.location] != PermissionStatus.granted ||
+      statuses[Permission.locationWhenInUse] != PermissionStatus.granted) {
+      Fluttertoast.showToast(
+        msg: AppLocalizations.of(context)!.locationPermissionError(statuses[Permission.location].toString()),
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIosWeb: 1,
+        textColor: Colors.white,
+        backgroundColor: Colors.red.shade400,
+        fontSize: 16.0
+      );
+    }
+
+    if (statuses[Permission.bluetooth] != PermissionStatus.granted ||
+      statuses[Permission.bluetoothScan] != PermissionStatus.granted ||
+      statuses[Permission.bluetoothConnect] != PermissionStatus.granted ) {
+      Fluttertoast.showToast(
+        msg: AppLocalizations.of(context)!.bluetoothPermissionError(statuses[Permission.bluetooth].toString()),
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIosWeb: 1,
+        textColor: Colors.white,
+        backgroundColor: Colors.red.shade400,
+        fontSize: 16.0
+      );
+    }
+  }
+
+  void requestBluetooth() async {
+    PermissionStatus status = await Permission.bluetoothConnect.status;
+    if (status != PermissionStatus.granted) {
+      debugPrint("Bluetooth connect: $status");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.bluetoothPermissionError("Bluetooth access denied")))
+        );
+      }
+      return;
+    }
+
+    bool? enabled = await FlutterBluetoothSerial.instance.isEnabled;
+    if (!enabled!) {
+      FlutterBluetoothSerial.instance.requestEnable().then((request) {
+        if (request!) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.bluetoothRequestSuccess))
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.bluetoothRequestDeclined))
+          );
+        }
+      });
+    }
+  }
+
   void connectDevice() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Initiating connection to device!"),
-        duration: Duration(milliseconds: 1500)
-      )
+      SnackBar(content: Text(AppLocalizations.of(context)!.initConnection))
     );
 
     BluetoothConnection.toAddress(widget.server.address).then((result) {
-      log('Connected to the device');
+      debugPrint('Connected to the device');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Connection successfully established!"),
-          duration: Duration(seconds: 2)
-        )
+        SnackBar(content: Text(AppLocalizations.of(context)!.connectSuccessful))
       );
       connection = result;
       setState(() {
@@ -82,11 +149,11 @@ class HomePageState extends State<HomePage> {
         // If we didn't except this (no flag set), it means closing by remote.
         if (isDisconnecting) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Disconnect request success!"))
+            SnackBar(content: Text(AppLocalizations.of(context)!.localDisconnect))
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Device disconnected willfully!"))
+            SnackBar(content: Text(AppLocalizations.of(context)!.remoteDisconnect))
           );
           markers.clear();
         }
@@ -95,10 +162,12 @@ class HomePageState extends State<HomePage> {
         }
       });
     }).catchError((error) {
-      log('Cannot connect, exception occured');
-      log(error);
+      debugPrint('Cannot connect, exception occured');
+      debugPrint(error.toString());
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Connection attempt failed!"))
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.connectAttemptFailed),
+          backgroundColor: Colors.red),
       );
     });
   }
@@ -109,7 +178,7 @@ class HomePageState extends State<HomePage> {
   }
 
   void addMarker(final LatLng loc) {
-    // log(loc);
+    // debugPrint(loc);
     setState(() {
       markers.clear();
       markers.add(
@@ -140,7 +209,7 @@ class HomePageState extends State<HomePage> {
     int sepIndex = dataBuffer.indexOf(' '.codeUnitAt(0));
     if (endIndex >= 0 && endIndex <= dataBuffer.length - 1) {
       String result = String.fromCharCodes(dataBuffer);
-      // log(result);
+      // debugPrint(result);
       addMarker(parseData(result, endIndex, sepIndex));
       dataBuffer.clear();
     }
@@ -151,6 +220,8 @@ class HomePageState extends State<HomePage> {
     getImages("assets/images/dog-paw.png", 150).then((value) {
       customIcon = BitmapDescriptor.fromBytes(value);
     });
+    requestPermissions();
+    requestBluetooth();
 
     super.initState();
   }
@@ -168,6 +239,7 @@ class HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       body: SafeArea(
         child: GoogleMap(

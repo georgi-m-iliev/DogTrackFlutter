@@ -1,0 +1,25 @@
+{
+    "initConnection": "Initiating connection to device!",
+    "connectSuccessful": "Connection successfully established!",
+    "connectAttemptFailed": "Connection attempt failed!",
+    "localDisconnect": "Disconnect request success!",
+    "remoteDisconnect": "Device disconnected willfully!",
+    "locationPermissionError": "Location permission error! Error: {errorStatus}",
+    "@locationPermissionError": {
+        "placeholders": {
+            "errorStatus": {
+                "type": "String"
+                }
+        }
+    },
+    "bluetoothPermissionError": "Bluetooth permission error! Error: {errorStatus}",
+    "@bluetoothPermissionError": {
+        "placeholders": {
+            "errorStatus": {
+                "type": "String"
+            }
+        }
+    },
+    "bluetoothRequestSuccess": "Bluetooth enabled!",
+    "bluetoothRequestDeclined": "Bluetooth not enabled. Please enable it!"
+}
