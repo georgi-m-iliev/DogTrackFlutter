@@ -25,10 +25,10 @@ class HomePageState extends State<HomePage> {
     zoom: 16,
   );
 
+  final List<LatLng> locHistory = [];
   final Set<Marker> markers = {};
   final Set<Polyline> polylines = {};
-  LatLng previousLoc = const LatLng(200, 200);
-  
+ 
   late BitmapDescriptor customIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
 
   BluetoothConnection? connection;
@@ -131,9 +131,9 @@ class HomePageState extends State<HomePage> {
 
   void connectDevice() {
     // Clear recent data from map
+    locHistory.clear();
     markers.clear();
     polylines.clear();
-    previousLoc = const LatLng(200, 200);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(AppLocalizations.of(context)!.initConnection))
@@ -205,10 +205,13 @@ class HomePageState extends State<HomePage> {
   void updateLocation(final LatLng loc) {
     // debugPrint(loc);
     setMarker(loc);
-    if(previousLoc.latitude != 200 && previousLoc.longitude != 200) {
-      addPolyline(loc);
+    LatLng lastLoc = locHistory.last;
+    if(Geolocator.distanceBetween(loc.latitude, loc.longitude, lastLoc.latitude, lastLoc.longitude) > 2) {
+      locHistory.add(loc);
+      if(locHistory.length > 1) {
+        addPolyline();
+      }
     }
-    previousLoc = loc;
   }
 
   void setMarker(final LatLng loc) {
@@ -228,12 +231,13 @@ class HomePageState extends State<HomePage> {
     });
   }
 
-  void addPolyline(LatLng loc) {
+  void addPolyline() {
     polylines.add(
       Polyline(
         polylineId: const PolylineId("1"),
-        points: [previousLoc, loc],
-        color: Colors.orange.shade900
+        points: locHistory,
+        color: Colors.orange.shade900,
+        width: 3,
       )
     );
   }
