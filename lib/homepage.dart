@@ -56,6 +56,20 @@ class HomePageState extends State<HomePage> {
     return(await fi.image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List();
   }
 
+  LatLngBounds boundsFromLatLngList(List<LatLng> list) {
+    assert(list.isNotEmpty);
+    double x0, x1, y0, y1;    
+    x0 = x1 = list.first.latitude;
+    y0 = y1 = list.first.longitude;
+    for (LatLng latLng in list) {
+        if (latLng.latitude > x1) x1 = latLng.latitude;
+        if (latLng.latitude < x0) x0 = latLng.latitude;
+        if (latLng.longitude > y1) y1 = latLng.longitude;
+        if (latLng.longitude < y0) y0 = latLng.longitude;
+    }
+    return LatLngBounds(northeast: LatLng(x1, y1), southwest: LatLng(x0, y0));
+  }
+
   LatLng parseData(String data, int endIndex, int sepIndex) {
     return LatLng(double.parse(data.substring(0, sepIndex)),
         double.parse(data.substring(sepIndex + 1, endIndex)));
@@ -204,17 +218,22 @@ class HomePageState extends State<HomePage> {
   
   void updateLocation(final LatLng loc) {
     // debugPrint(loc);
-    setMarker(loc);
-    LatLng lastLoc = locHistory.last;
-    if(Geolocator.distanceBetween(loc.latitude, loc.longitude, lastLoc.latitude, lastLoc.longitude) > 2) {
+    updateMarker(loc);
+    if(locHistory.isEmpty) {
       locHistory.add(loc);
-      if(locHistory.length > 1) {
-        addPolyline();
+    }
+    else {
+      LatLng lastLoc = locHistory.last;
+      if(Geolocator.distanceBetween(loc.latitude, loc.longitude, lastLoc.latitude, lastLoc.longitude) > 2) {
+        locHistory.add(loc);
+        updatePolyline();
       }
     }
   }
 
-  void setMarker(final LatLng loc) {
+  void updateMarker(final LatLng loc) async {
+    Position currentLoc = await getUserCurrentLocation();
+    LatLngBounds bound = boundsFromLatLngList([loc, LatLng(currentLoc.latitude, currentLoc.longitude)]);
     setState(() {
       markers.clear();
       markers.add(Marker(
@@ -223,15 +242,12 @@ class HomePageState extends State<HomePage> {
         icon: customIcon,
       ));
       _controller.future.then((controller) {
-        controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
-          target: loc,
-          zoom: 16,
-        )));
+        controller.animateCamera(CameraUpdate.newLatLngBounds(bound, 30));
       });
     });
   }
 
-  void addPolyline() {
+  void updatePolyline() {
     polylines.add(
       Polyline(
         polylineId: const PolylineId("1"),
@@ -244,7 +260,7 @@ class HomePageState extends State<HomePage> {
 
   @override
   void initState() {
-    getImages("assets/images/dog-paw.png", 150).then((value) {
+    getImages("assets/images/dog-paw.png", 180).then((value) {
       customIcon = BitmapDescriptor.fromBytes(value);
     });
     requestPermissions();
