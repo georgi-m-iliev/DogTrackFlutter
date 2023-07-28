@@ -242,7 +242,7 @@ class HomePageState extends State<HomePage> {
         icon: customIcon,
       ));
       _controller.future.then((controller) {
-        controller.animateCamera(CameraUpdate.newLatLngBounds(bound, 30));
+        controller.animateCamera(CameraUpdate.newLatLngBounds(bound, 80));
       });
     });
   }
