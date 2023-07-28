@@ -1,9 +1,9 @@
-name: Build an android release
+name: Android Release
 
 on:
     push:
         tags:
-          - 'v*.*'
+          - 'v*.*.*'
 
     workflow_dispatch:
 
@@ -61,11 +61,6 @@ jobs:
         - name: 'Build APK'
           id: 'build'
           run: 'flutter build apk --release --dart-define-from-file=env.json'
-
-        - name: 'Make envfile'
-          env:
-            GITHUB_CONTEXT: ${{ toJson(secrets) }}
-          run: 'mkdir -p build/app/outputs/apk/release/ && echo "hui" > build/app/outputs/apk/release/file.apk'
 
         - name: 'Release the build'
           uses: ncipollo/release-action@v1

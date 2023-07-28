@@ -7,5 +7,6 @@
     "locationPermissionError": "Проблем с достъп до местоположение! Грешка: {errorStatus}",
     "bluetoothPermissionError": "Проблем с достъп до Bluetooth! Грешка: {errorStatus}",
     "bluetoothRequestSuccess": "Bluetooth е включен!",
-    "bluetoothRequestDeclined": "Bluetooth не беше включен. Моля включете го!"
+    "bluetoothRequestDeclined": "Bluetooth не беше включен. Моля включете го!",
+    "updateFound": "Намерена е нова версия! Изтегляне..."
 }

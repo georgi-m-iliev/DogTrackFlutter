@@ -21,5 +21,6 @@
         }
     },
     "bluetoothRequestSuccess": "Bluetooth enabled!",
-    "bluetoothRequestDeclined": "Bluetooth not enabled. Please enable it!"
+    "bluetoothRequestDeclined": "Bluetooth not enabled. Please enable it!",
+    "updateFound": "Update found!"
 }
