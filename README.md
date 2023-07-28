@@ -1,4 +1,4 @@
-# DogTrackFlutter
+# DogTrackFlutter [![Aandroid release](https://github.com/georgi-m-iliev/DogTrackFlutter/actions/workflows/release-android.yml/badge.svg)](https://github.com/georgi-m-iliev/DogTrackFlutter/actions/workflows/release-android.yml)
 
 Flutter App that visualises coordinates received from [DogTrack](https://github.com/georgi-m-iliev/DogTrack) on a Google Maps Component
 
@@ -16,8 +16,12 @@ Flutter App that visualises coordinates received from [DogTrack](https://github.
 * permission_handler
 * fluttertoast
 * flutter_launcher_icons
-* wakelock
+* wakelock_plus
 * flutter_localizations
+* http
+* flutter_file_downloader
+* app_installer
+* package_info_plus
 
 ## Running the app
 
@@ -36,6 +40,11 @@ flutter run --dart-define-from-file=env.json
 ```
 flutter build apk --release --dart-define-from-file=env.json
 ```
+
+## Automatic OTA updates
+
+The app has an implemented update system, which relies on the Releases of this repository. On every startup a check is performed and if newer version is available, it would be downloaded.
+**NB:** To perform the update you would have to allow the app to install .apk files.
 
 ## Acknowledgements
 
