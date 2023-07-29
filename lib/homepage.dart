@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:geolocator/geolocator.dart' as geolocator;
+import 'package:location/location.dart' hide PermissionStatus;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
@@ -25,6 +26,9 @@ class HomePageState extends State<HomePage> {
     zoom: 16,
   );
 
+  Map<Permission, PermissionStatus> statuses = {};
+
+  Location userLocation = Location();
   final List<LatLng> locHistory = [];
   final Set<Marker> markers = {};
   final Set<Polyline> polylines = {};
@@ -35,18 +39,7 @@ class HomePageState extends State<HomePage> {
   bool isConnecting = true;
   bool get isConnected => (connection?.isConnected ?? false);
   bool isDisconnecting = false;
-
   List<int> dataBuffer = List<int>.empty(growable: true);
-
-  Future<Position> getUserCurrentLocation() async {
-    await Geolocator.requestPermission()
-        .then((value) {})
-        .onError((error, stackTrace) async {
-      await Geolocator.requestPermission();
-      debugPrint("Error with fetching location");
-    });
-    return await Geolocator.getCurrentPosition();
-  }
 
   // Function to convert asset to bytes for usage by BitmapDescriptor
   Future<Uint8List> getImages(String path, int width) async{
@@ -76,8 +69,7 @@ class HomePageState extends State<HomePage> {
   }
 
   void requestPermissions() async {
-    Map<Permission, PermissionStatus> statuses =
-    await [
+    statuses = await [
       Permission.location,
       Permission.locationWhenInUse,
       Permission.bluetooth,
@@ -91,7 +83,7 @@ class HomePageState extends State<HomePage> {
       statuses[Permission.locationWhenInUse] != PermissionStatus.granted) {
       Fluttertoast.showToast(
         msg: AppLocalizations.of(context)!.locationPermissionError(statuses[Permission.location].toString()),
-        toastLength: Toast.LENGTH_SHORT,
+        toastLength: Toast.LENGTH_LONG,
         gravity: ToastGravity.CENTER,
         timeInSecForIosWeb: 1,
         textColor: Colors.white,
@@ -105,7 +97,7 @@ class HomePageState extends State<HomePage> {
       statuses[Permission.bluetoothConnect] != PermissionStatus.granted ) {
       Fluttertoast.showToast(
         msg: AppLocalizations.of(context)!.bluetoothPermissionError(statuses[Permission.bluetooth].toString()),
-        toastLength: Toast.LENGTH_SHORT,
+        toastLength: Toast.LENGTH_LONG,
         gravity: ToastGravity.CENTER,
         timeInSecForIosWeb: 1,
         textColor: Colors.white,
@@ -213,8 +205,6 @@ class HomePageState extends State<HomePage> {
       dataBuffer.clear();
     }
   }
-
-  late LatLng lastLocation;
   
   void updateLocation(final LatLng loc) {
     // debugPrint(loc);
@@ -224,27 +214,43 @@ class HomePageState extends State<HomePage> {
     }
     else {
       LatLng lastLoc = locHistory.last;
-      if(Geolocator.distanceBetween(loc.latitude, loc.longitude, lastLoc.latitude, lastLoc.longitude) > 2) {
-        locHistory.add(loc);
+      locHistory.add(loc);
+      if(geolocator.Geolocator.distanceBetween(loc.latitude, loc.longitude, lastLoc.latitude, lastLoc.longitude) > 2) {
         updatePolyline();
       }
     }
   }
 
-  void updateMarker(final LatLng loc) async {
-    Position currentLoc = await getUserCurrentLocation();
-    LatLngBounds bound = boundsFromLatLngList([loc, LatLng(currentLoc.latitude, currentLoc.longitude)]);
+  void updateCamera() async {
+    LocationData currentLoc = await userLocation.getLocation();
+    CameraUpdate camUpdate;
+    if(markers.isEmpty) {
+      camUpdate = CameraUpdate.newLatLng(LatLng(currentLoc.latitude!, currentLoc.longitude!));
+    }
+    else {
+      LatLngBounds bound = boundsFromLatLngList(
+        [markers.last.position, LatLng(currentLoc.latitude!, currentLoc.longitude!)]
+      );
+      camUpdate = CameraUpdate.newLatLngBounds(bound, 80);
+    }
+    
     setState(() {
+      _controller.future.then((controller) {
+        controller.animateCamera(camUpdate);
+      });
+    });
+  }
+
+  void updateMarker(final LatLng loc) async {
+    setState(() async {
       markers.clear();
       markers.add(Marker(
         markerId: const MarkerId("1"),
         position: loc,
         icon: customIcon,
       ));
-      _controller.future.then((controller) {
-        controller.animateCamera(CameraUpdate.newLatLngBounds(bound, 80));
-      });
     });
+    updateCamera();
   }
 
   void updatePolyline() {
@@ -267,6 +273,24 @@ class HomePageState extends State<HomePage> {
     requestBluetooth();
 
     super.initState();
+
+    userLocation.serviceEnabled().then((serviceEnabled) {
+      if(!serviceEnabled) {
+        userLocation.requestService();
+        userLocation.changeSettings(
+          accuracy: LocationAccuracy.high, distanceFilter: 2, interval: 5000
+        );
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    userLocation.onLocationChanged.listen((LocationData currentLocation) {
+      debugPrint("Location changed");
+      updateCamera();
+    });
+    super.didChangeDependencies();
   }
 
   @override

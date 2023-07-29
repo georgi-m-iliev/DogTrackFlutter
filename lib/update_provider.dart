@@ -6,7 +6,6 @@ import 'package:app_installer/app_installer.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_file_downloader/flutter_file_downloader.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 int getExtendedVersionNumber(String version) {
   List versionCells = version.split('.');
@@ -81,6 +80,15 @@ class Updater {
     }
     else {
       debugPrint("No new version found!");
+      Fluttertoast.showToast(
+        msg: "Update check success!\nNo new updates found.",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIosWeb: 1,
+        textColor: Colors.white,
+        backgroundColor: Colors.red.shade400,
+        fontSize: 16.0
+      );
     }
   }
 
