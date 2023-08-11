@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -32,6 +33,7 @@ class HomePageState extends State<HomePage> {
   final List<LatLng> locHistory = [];
   final Set<Marker> markers = {};
   final Set<Polyline> polylines = {};
+  double distanceFromDog = 0;
  
   late BitmapDescriptor customIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
 
@@ -224,12 +226,17 @@ class HomePageState extends State<HomePage> {
   void updateCamera() async {
     LocationData currentLoc = await userLocation.getLocation();
     CameraUpdate camUpdate;
+    //if no dog marker, center on user
     if(markers.isEmpty) {
       camUpdate = CameraUpdate.newLatLng(LatLng(currentLoc.latitude!, currentLoc.longitude!));
     }
     else {
       LatLngBounds bound = boundsFromLatLngList(
         [markers.last.position, LatLng(currentLoc.latitude!, currentLoc.longitude!)]
+      );
+      distanceFromDog = geolocator.Geolocator.distanceBetween(
+        markers.last.position.latitude, markers.last.position.longitude, 
+        currentLoc.latitude!, currentLoc.longitude!
       );
       camUpdate = CameraUpdate.newLatLngBounds(bound, 80);
     }
@@ -264,6 +271,38 @@ class HomePageState extends State<HomePage> {
     );
   }
 
+  double getStraightLineDistance(lat1, lon1, lat2, lon2) {
+    var R = 6371; // Radius of the earth in km
+    var dLat = deg2rad(lat2 - lat1);
+    var dLon = deg2rad(lon2 - lon1);
+    var a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(deg2rad(lat1)) *
+            math.cos(deg2rad(lat2)) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+    var c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    var d = R * c; // Distance in km
+    return d * 1000; //in m
+  }
+
+  dynamic deg2rad(deg) {
+    return deg * (math.pi / 180);
+  }
+
+  double calculateDistane(List<LatLng> polyline) {
+    double totalDistance = 0;
+    for (int i = 0; i < polyline.length; i++) {
+      if (i < polyline.length - 1) { // skip the last index
+        totalDistance += getStraightLineDistance(
+            polyline[i + 1].latitude,
+            polyline[i + 1].longitude,
+            polyline[i].latitude,
+            polyline[i].longitude);
+      }
+    }
+    return totalDistance;
+  }
+
   @override
   void initState() {
     getImages("assets/images/dog-paw.png", 180).then((value) {
@@ -287,7 +326,7 @@ class HomePageState extends State<HomePage> {
   @override
   void didChangeDependencies() {
     userLocation.onLocationChanged.listen((LocationData currentLocation) {
-      debugPrint("Location changed");
+      // debugPrint("Location changed");
       updateCamera();
     });
     super.didChangeDependencies();
@@ -321,6 +360,18 @@ class HomePageState extends State<HomePage> {
           polylines: polylines,
         ),
       ),
+      bottomNavigationBar: BottomAppBar(
+        color: Colors.green.shade700,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Wrap(
+            spacing: 50,
+            children: [
+              Text("ø: ${distanceFromDog.toStringAsFixed(2)} m", style: const TextStyle(fontSize: 20, color: Colors.white)),
+              Text("${AppLocalizations.of(context)!.walkDistanceLabel} ø: ${calculateDistane(locHistory).toStringAsFixed(2)} m", style: const TextStyle(fontSize: 20, color: Colors.white) ),
+            ])
+        )
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           if (isConnected) {
@@ -334,6 +385,7 @@ class HomePageState extends State<HomePage> {
             ? const Icon(Icons.bluetooth_disabled)
             : const Icon(Icons.bluetooth_connected),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
     );
   }
 }
