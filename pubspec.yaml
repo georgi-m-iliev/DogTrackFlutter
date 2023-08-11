@@ -49,11 +49,7 @@ dependencies:
   flutter_file_downloader: ^1.1.2
   app_installer: ^1.1.0
   package_info_plus: ^4.0.2
-  location: ^5.0.1
-
-
-dependency_overrides: 
-  location_platform_interface: 3.0.0
+  location: ^5.0.2
 
 
 dev_dependencies:

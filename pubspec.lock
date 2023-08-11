@@ -217,10 +217,10 @@ packages:
     dependency: transitive
     description:
       name: geolocator_android
-      sha256: b06c72853c993ae533f482d81a12805d7a441f5231d9668718bc7131d7464082
+      sha256: "835ff5b4888a2f8eba128996494faf9c5d422785322a81dc0565b99e0f6c379d"
       url: "https://pub.dev"
     source: hosted
-    version: "4.2.0"
+    version: "4.2.2"
   geolocator_apple:
     dependency: transitive
     description:
@@ -297,10 +297,10 @@ packages:
     dependency: transitive
     description:
       name: google_maps_flutter_web
-      sha256: "15303a2ddd04e21ace41c823de8396a61857a61fed4c145f25ca1fc76628c40c"
+      sha256: "229391997f216d37c76bfc10d9b5837a1dfeb98c4b4063c605016382e5bcd910"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.2"
+    version: "0.5.3"
   html:
     dependency: transitive
     description:
@@ -377,26 +377,26 @@ packages:
     dependency: "direct main"
     description:
       name: location
-      sha256: "81eef746c121de69b9936ccad350707b2579a76f9d1a162e47db1fb7d2c9db9f"
+      sha256: "54cb01b8d4fb0e554a1175e150a9b7f5e46eb2551d84386fd281ce2cda76da36"
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.1"
+    version: "5.0.2"
   location_platform_interface:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
       name: location_platform_interface
-      sha256: "7ef30443cffadad54d534dfd370fe126bc087655aaa53f181570b9812a87a806"
+      sha256: a211a41b1fdfaddaf02996750dd703abcc7ac1d4fd90e978c8773ccf2260af68
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.0"
+    version: "3.1.1"
   location_web:
     dependency: transitive
     description:
       name: location_web
-      sha256: "3249dfd4a50732440a9d8b3791a05e33facde2d1902b1e8dbd222b30a8d0f7b4"
+      sha256: acde3e95c4dec2b82cbdc3490bf010eeaf66e793e20f62364887e072bd701d49
       url: "https://pub.dev"
     source: hosted
-    version: "4.1.0"
+    version: "4.1.1"
   matcher:
     dependency: transitive
     description:
@@ -425,10 +425,10 @@ packages:
     dependency: "direct main"
     description:
       name: package_info_plus
-      sha256: ceb027f6bc6a60674a233b4a90a7658af1aebdea833da0b5b53c1e9821a78c7b
+      sha256: "6ff267fcd9d48cb61c8df74a82680e8b82e940231bb5f68356672fde0397334a"
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.2"
+    version: "4.1.0"
   package_info_plus_platform_interface:
     dependency: transitive
     description:
