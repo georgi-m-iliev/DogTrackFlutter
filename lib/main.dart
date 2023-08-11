@@ -6,8 +6,16 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:dog_track/update_provider.dart';
 
+void initApp() {
+  WakelockPlus.enable();
+  Updater.instance().cleanup().then(
+    (value) => Updater.instance().downloadAndOpen()
+  );
+}
+
 void main() {
   runApp(const MyApp());
+  initApp();
 }
 
 class MyApp extends StatelessWidget {
@@ -15,12 +23,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    WakelockPlus.enable();
-
-    Updater.instance().cleanup().then(
-      (value) => Updater.instance().downloadAndOpen()
-    );
-
     return MaterialApp(
       title: 'DogTrack',
       // locale: const Locale('bg'),
