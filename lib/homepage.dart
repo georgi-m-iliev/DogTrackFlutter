@@ -365,10 +365,32 @@ class HomePageState extends State<HomePage> {
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Wrap(
-            spacing: 50,
+            spacing: 20,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Text("ø: ${distanceFromDog.toStringAsFixed(2)} m", style: const TextStyle(fontSize: 20, color: Colors.white)),
-              Text("${AppLocalizations.of(context)!.walkDistanceLabel} ø: ${calculateDistane(locHistory).toStringAsFixed(2)} m", style: const TextStyle(fontSize: 20, color: Colors.white) ),
+              Text("ø: ${distanceFromDog.toStringAsFixed(2)} m", style: const TextStyle(fontSize: 16, color: Colors.white)),
+              Text("${AppLocalizations.of(context)!.walkDistanceLabel} ø: ${calculateDistane(locHistory).toStringAsFixed(2)} m", style: const TextStyle(fontSize: 16, color: Colors.white)),
+              IconButton(
+                onPressed: () => showDialog<String>(
+                  context: context,
+                  builder: (BuildContext context) => AlertDialog(
+                    title: const Text('AlertDialog Title'),
+                    content: Column(children: [
+                      Switch(value: true, onChanged: (bool ds) {})
+                    ]),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, 'Cancel'),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, 'OK'),
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                ),
+                icon: const Icon(Icons.settings, color: Colors.white))
             ])
         )
       ),
