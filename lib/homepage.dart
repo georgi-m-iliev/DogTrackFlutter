@@ -291,14 +291,13 @@ class HomePageState extends State<HomePage> {
 
   double calculateDistane(List<LatLng> polyline) {
     double totalDistance = 0;
-    for (int i = 0; i < polyline.length; i++) {
-      if (i < polyline.length - 1) { // skip the last index
-        totalDistance += getStraightLineDistance(
-            polyline[i + 1].latitude,
-            polyline[i + 1].longitude,
-            polyline[i].latitude,
-            polyline[i].longitude);
-      }
+    for (int i = 0; i < polyline.length - 1; i++) {
+      totalDistance += getStraightLineDistance(
+        polyline[i + 1].latitude,
+        polyline[i + 1].longitude,
+        polyline[i].latitude,
+        polyline[i].longitude
+      );
     }
     return totalDistance;
   }
