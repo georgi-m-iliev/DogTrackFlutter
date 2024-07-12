@@ -9,7 +9,7 @@ import 'package:geolocator/geolocator.dart' as geolocator;
 import 'package:location/location.dart' hide PermissionStatus;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:flutter_bluetooth_serial_ble/flutter_bluetooth_serial_ble.dart';
 
 class HomePage extends StatefulWidget {
   final BluetoothDevice server = const BluetoothDevice(
@@ -146,7 +146,6 @@ class HomePageState extends State<HomePage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(AppLocalizations.of(context)!.initConnection))
     );
-
     BluetoothConnection.toAddress(widget.server.address).then((result) {
       debugPrint('Connected to the device');
       ScaffoldMessenger.of(context).showSnackBar(
